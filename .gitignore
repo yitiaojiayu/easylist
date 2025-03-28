@@ -1,0 +1,7 @@
+/.idea
+/target/**
+*.class
+*.h
+*.dll
+*.bat
+*.json
