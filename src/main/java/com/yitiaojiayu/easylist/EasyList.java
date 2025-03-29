@@ -2,16 +2,13 @@ package com.yitiaojiayu.easylist;
 
 import com.yitiaojiayu.kryo.KryoSimple;
 import java.nio.ByteBuffer;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
+import java.util.*;
 
 /**
  * @author yitiaojiayu
  * @date 2025/3/27
  */
-@SuppressWarnings({"AlibabaConstantFieldShouldBeUpperCase", "unused", "java:S106"})
+@SuppressWarnings({"AlibabaConstantFieldShouldBeUpperCase", "PatternVariableCanBeUsed", "unused", "java:S106"})
 public class EasyList<E> implements List<E> {
 
     private static final int DEFAULT_BUFFER_CAPACITY = 1024;
@@ -214,5 +211,37 @@ public class EasyList<E> implements List<E> {
         }
         sb.append("]");
         return sb.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof List)) {
+            return false;
+        }
+        List<?> other = (List<?>) o;
+        if (size() != other.size()) {
+            return false;
+        }
+        for (int i = 0; i < count; i++) {
+            E thisElement = get(i);
+            Object otherElement = other.get(i);
+            if (!Objects.equals(thisElement, otherElement)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int hashCode = 1;
+        for (int i = 0; i < count; i++) {
+            E element = get(i);
+            hashCode = 31 * hashCode + (element == null ? 0 : element.hashCode());
+        }
+        return hashCode;
     }
 }
