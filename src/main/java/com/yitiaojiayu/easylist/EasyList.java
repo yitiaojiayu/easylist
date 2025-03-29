@@ -1,6 +1,8 @@
 package com.yitiaojiayu.easylist;
 
 import com.yitiaojiayu.kryo.KryoSimple;
+
+import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.util.*;
 
@@ -8,7 +10,7 @@ import java.util.*;
  * @author yitiaojiayu
  * @date 2025/3/27
  */
-@SuppressWarnings({"AlibabaConstantFieldShouldBeUpperCase", "PatternVariableCanBeUsed", "unused", "java:S106"})
+@SuppressWarnings({"AlibabaConstantFieldShouldBeUpperCase", "PatternVariableCanBeUsed", "unchecked", "unused", "java:S106"})
 public class EasyList<E> implements List<E> {
 
     private static final int DEFAULT_BUFFER_CAPACITY = 1024;
@@ -49,21 +51,21 @@ public class EasyList<E> implements List<E> {
         limit = newLimit;
     }
 
-    private boolean memorySufficient(E e) {
+    private boolean memoryNotFull(E e) {
         int memorySize = KryoSimple.asByteArray(e).length;
         int memoryRemaining = buffer.capacity() - memoryUsed;
         return memoryRemaining >= memorySize;
     }
 
-    private boolean arraySufficient() {
+    private boolean arrayNotFull() {
         return limit > count;
     }
 
     private void detect(E e) {
-        if (!memorySufficient(e)) {
+        while (!memoryNotFull(e)) {
             resizeBuffer();
         }
-        if (!arraySufficient()) {
+        if (!arrayNotFull()) {
             resizeArrays();
         }
     }
@@ -85,22 +87,76 @@ public class EasyList<E> implements List<E> {
 
     @Override
     public boolean contains(Object o) {
+        for (int i = 0; i < count; i++) {
+            E element = get(i);
+            if (Objects.equals(element, o)) {
+                return true;
+            }
+        }
         return false;
     }
 
     @Override
     public Iterator<E> iterator() {
-        return null;
+        return new EasyIterator();
+    }
+
+    private class EasyIterator implements Iterator<E> {
+        int cursor = 0;
+
+        @Override
+        public boolean hasNext() {
+            return cursor < count;
+        }
+
+        @Override
+        public E next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException("EasyList: Iterator: No more elements");
+            }
+            E nextElement = EasyList.this.get(cursor);
+            cursor++;
+            return nextElement;
+        }
     }
 
     @Override
     public Object[] toArray() {
-        return new Object[0];
+        Object[] arr = new Object[count];
+        for (int i = 0; i < count; i++) {
+            arr[i] = get(i);
+        }
+        return arr;
     }
 
     @Override
-    public <T> T[] toArray(T[] a) {
-        return null;
+    public <T> T[] toArray(T[] arr) {
+        if (arr == null) {
+            throw new NullPointerException("EasyList: toArray: Input array cannot be null");
+        }
+        if (arr.length < count) {
+            Class<?> componentType = arr.getClass().getComponentType();
+            T[] newArray = (T[]) Array.newInstance(componentType, count);
+            for (int i = 0; i < count; i++) {
+                try {
+                    newArray[i] = (T) get(i);
+                } catch (ClassCastException e) {
+                    throw new ArrayStoreException("EasyList: toArray: Element type mismatch during array copy");
+                }
+            }
+            return newArray;
+        }
+        for (int i = 0; i < count; i++) {
+            try {
+                arr[i] = (T) get(i);
+            } catch (ClassCastException e) {
+                throw new ArrayStoreException("EasyList: toArray: Element type mismatch during array copy");
+            }
+        }
+        if (arr.length > count) {
+            arr[count] = null;
+        }
+        return arr;
     }
 
     @Override
@@ -207,7 +263,7 @@ public class EasyList<E> implements List<E> {
             if (count > i + 1) {
                 sb.append(", ");
             }
-            i ++;
+            i++;
         }
         sb.append("]");
         return sb.toString();

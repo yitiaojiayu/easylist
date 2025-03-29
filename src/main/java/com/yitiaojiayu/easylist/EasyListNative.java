@@ -12,7 +12,7 @@ import java.util.Locale;
  * @date 2025/3/27
  */
 @SuppressWarnings({"unused", "java:S106", "java:S1075", "java:S112", "java:S108", "java:S3776", "java:S2259"})
-public class EasyListNative {
+final class EasyListNative {
 /*
                 src/main/resources/
                 └── natives/
@@ -20,7 +20,7 @@ public class EasyListNative {
                     │   └── easylist.dll
                     ├── linux_x86_64/
                     │   └── lib_easylist.so
-                    ├─── macos_x86_64/
+                    ├── macos_x86_64/
                     │   └── lib_easylist.dylib
                     └── macos_aarch64/
                         └── lib_easylist.dylib
@@ -104,5 +104,6 @@ public class EasyListNative {
         }
     }
 
-    public static native byte[] get(ByteBuffer buffer, int index, int size);
+    static native byte[] get(ByteBuffer buffer, int index, int size);
+
 }
