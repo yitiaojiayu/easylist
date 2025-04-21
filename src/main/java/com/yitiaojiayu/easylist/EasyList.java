@@ -17,25 +17,29 @@ public class EasyList<E> implements List<E> {
     private static final int DEFAULT_LIMIT_SIZE = 10;
 
     private ByteBuffer buffer;
+    private int useStart;
+    private int useEnd;
     private int limit;
     private int count;
     private int[] index;
     private int[] size;
-    private int memoryUsed;
+
 
     public EasyList() {
-        buffer = ByteBuffer.allocateDirect(DEFAULT_BUFFER_CAPACITY);
-        limit = DEFAULT_LIMIT_SIZE;
+        this.buffer = ByteBuffer.allocateDirect(DEFAULT_BUFFER_CAPACITY);
+        this.useStart = 0;
+        this.useEnd = 0;
+        this.limit = DEFAULT_LIMIT_SIZE;
         this.count = 0;
-        index = new int[limit];
-        size = new int[limit];
-        this.memoryUsed = 0;
+        this.index = new int[limit];
+        this.size = new int[limit];
     }
 
     private void resizeBuffer() {
         ByteBuffer newBuffer = ByteBuffer.allocateDirect(buffer.capacity() * 2);
-        buffer.position(0);
-        buffer.limit(memoryUsed);
+        buffer.position(useStart);
+        buffer.limit(useEnd);
+        newBuffer.position(useStart);
         newBuffer.put(buffer);
         this.buffer = newBuffer;
     }
@@ -53,7 +57,7 @@ public class EasyList<E> implements List<E> {
 
     private boolean memoryNotFull(E e) {
         int memorySize = KryoSimple.asByteArray(e).length;
-        int memoryRemaining = buffer.capacity() - memoryUsed;
+        int memoryRemaining = buffer.capacity() - useEnd;
         return memoryRemaining >= memorySize;
     }
 
@@ -73,6 +77,10 @@ public class EasyList<E> implements List<E> {
     private E getData(int i) {
         byte[] data = EasyListNative.get(buffer, index[i], size[i]);
         return KryoSimple.asObject(data);
+    }
+
+    private void deleteDate(int i) {
+        EasyListNative.delete(buffer, index[i], size[i], useStart, useEnd);
     }
 
     @Override
@@ -164,15 +172,21 @@ public class EasyList<E> implements List<E> {
         detect(e);
         byte[] data = KryoSimple.asByteArray(e);
         buffer.put(data);
-        index[count] = memoryUsed;
+        index[count] = useEnd;
         size[count] = data.length;
-        memoryUsed += data.length;
+        useEnd += data.length;
         count++;
         return true;
     }
 
     @Override
     public boolean remove(Object o) {
+        for (int i = 0; i < count; i++) {
+            if (get(i).equals(o)) {
+                deleteDate(i);
+                return true;
+            }
+        }
         return false;
     }
 
