@@ -15,6 +15,7 @@ public class EasyList<E> implements List<E> {
 
     private static final int DEFAULT_BUFFER_CAPACITY = 1024;
     private static final int DEFAULT_LIMIT_SIZE = 10;
+    private static final int MULTIPLE = 2;
 
     private ByteBuffer buffer;
     private int useStart;
@@ -35,17 +36,36 @@ public class EasyList<E> implements List<E> {
         this.size = new int[limit];
     }
 
-    private void resizeBuffer() {
-        ByteBuffer newBuffer = ByteBuffer.allocateDirect(buffer.capacity() * 2);
+    private void resizeBufferBase(int startPosition) {
+        ByteBuffer newBuffer = ByteBuffer.allocateDirect(buffer.capacity() * MULTIPLE);
         buffer.position(useStart);
         buffer.limit(useEnd);
-        newBuffer.position(useStart);
+        newBuffer.position(startPosition);
         newBuffer.put(buffer);
         this.buffer = newBuffer;
     }
 
+    private void resizeBufferEnd() {
+        resizeBufferBase(useStart);
+    }
+
+    private void resizeBufferStart() {
+        resizeBufferBase(buffer.capacity() + useStart);
+    }
+
+    private boolean memoryEndNotFull(E e) {
+        int memorySize = KryoSimple.asByteArray(e).length;
+        int memoryRemaining = buffer.capacity() - useEnd;
+        return memoryRemaining >= memorySize;
+    }
+
+    private boolean memoryStartNotFull(E e) {
+        int memorySize = KryoSimple.asByteArray(e).length;
+        return useStart >= memorySize;
+    }
+
     private void resizeArrays() {
-        int newLimit = limit * 2;
+        int newLimit = limit * MULTIPLE;
         int[] newIndex = new int[newLimit];
         int[] newSize = new int[newLimit];
         System.arraycopy(index, 0, newIndex, 0, limit);
@@ -55,23 +75,24 @@ public class EasyList<E> implements List<E> {
         limit = newLimit;
     }
 
-    private boolean memoryEndNotFull(E e) {
-        int memorySize = KryoSimple.asByteArray(e).length;
-        int memoryRemaining = buffer.capacity() - useEnd;
-        return memoryRemaining >= memorySize;
-    }
-
-    private boolean arrayNotFull() {
-        return limit > count;
-    }
-
-    private void detect(E e) {
-        while (!memoryEndNotFull(e)) {
-            resizeBuffer();
-        }
-        if (!arrayNotFull()) {
+    private void arraysExt() {
+        if (limit <= count) {
             resizeArrays();
         }
+    }
+
+    private void detectEnd(E e) {
+        while (!memoryEndNotFull(e)) {
+            resizeBufferEnd();
+        }
+        arraysExt();
+    }
+
+    private void detectStart(E e) {
+        while (!memoryStartNotFull(e)) {
+            resizeBufferStart();
+        }
+        arraysExt();
     }
 
     private E getData(int i) {
@@ -96,6 +117,10 @@ public class EasyList<E> implements List<E> {
             System.arraycopy(size, i + 1, size, i, numMoved);
         }
         count--;
+    }
+
+    private void addData(int index, E element, boolean rightExt) {
+
     }
 
     @Override
@@ -135,7 +160,7 @@ public class EasyList<E> implements List<E> {
         @Override
         public E next() {
             if (!hasNext()) {
-                throw new NoSuchElementException("EasyList: Iterator: No more elements");
+                throw new NoSuchElementException("EasyList: iterator(): No more elements");
             }
             E nextElement = EasyList.this.get(cursor);
             cursor++;
@@ -155,7 +180,7 @@ public class EasyList<E> implements List<E> {
     @Override
     public <T> T[] toArray(T[] arr) {
         if (arr == null) {
-            throw new NullPointerException("EasyList: toArray: Input array cannot be null");
+            throw new NullPointerException("EasyList: toArray(T[] arr): Input array cannot be null");
         }
         if (arr.length < count) {
             Class<?> componentType = arr.getClass().getComponentType();
@@ -164,7 +189,7 @@ public class EasyList<E> implements List<E> {
                 try {
                     newArray[i] = (T) get(i);
                 } catch (ClassCastException e) {
-                    throw new ArrayStoreException("EasyList: toArray: Element type mismatch during array copy");
+                    throw new ArrayStoreException("EasyList: toArray(T[] arr): Element type mismatch during array copy");
                 }
             }
             return newArray;
@@ -173,7 +198,7 @@ public class EasyList<E> implements List<E> {
             try {
                 arr[i] = (T) get(i);
             } catch (ClassCastException e) {
-                throw new ArrayStoreException("EasyList: toArray: Element type mismatch during array copy");
+                throw new ArrayStoreException("EasyList: toArray(T[] arr): Element type mismatch during array copy");
             }
         }
         if (arr.length > count) {
@@ -184,12 +209,13 @@ public class EasyList<E> implements List<E> {
 
     @Override
     public boolean add(E e) {
-        detect(e);
+        detectEnd(e);
         byte[] data = KryoSimple.asByteArray(e);
+        int dataLength = data.length;
         buffer.put(data);
         index[count] = useEnd;
-        size[count] = data.length;
-        useEnd += data.length;
+        size[count] = dataLength;
+        useEnd += dataLength;
         count++;
         return true;
     }
@@ -243,7 +269,7 @@ public class EasyList<E> implements List<E> {
     @Override
     public E get(int i) {
         if (i < 0 || i >= count) {
-            throw new IndexOutOfBoundsException("EasyList: get: failed, Because Index: " + i + ", Size: " + count);
+            throw new IndexOutOfBoundsException("EasyList: get(int index): failed, Because Index: " + i + ", Size: " + count);
         }
         return getData(i);
     }
@@ -255,6 +281,22 @@ public class EasyList<E> implements List<E> {
 
     @Override
     public void add(int index, E element) {
+        if (index < 0 || index > size()) {
+            throw new IndexOutOfBoundsException("EasyList: add(int index, E element): Index out of bounds. Index: " + index + ", Size: " + count);
+        }
+        byte[] data = KryoSimple.asByteArray(element);
+        int dataLength = data.length;
+        int endSize = this.index[index];
+        int startSize = this.index[count] - endSize - dataLength;
+        boolean endExt = endSize > startSize;
+        if (endExt) {
+            if (memoryEndNotFull(element)) {
+                useEnd += dataLength;
+            }
+
+        } else {
+            useStart -= dataLength;
+        }
     }
 
     @Override
