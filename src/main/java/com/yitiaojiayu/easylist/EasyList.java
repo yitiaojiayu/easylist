@@ -55,7 +55,7 @@ public class EasyList<E> implements List<E> {
         limit = newLimit;
     }
 
-    private boolean memoryNotFull(E e) {
+    private boolean memoryEndNotFull(E e) {
         int memorySize = KryoSimple.asByteArray(e).length;
         int memoryRemaining = buffer.capacity() - useEnd;
         return memoryRemaining >= memorySize;
@@ -66,7 +66,7 @@ public class EasyList<E> implements List<E> {
     }
 
     private void detect(E e) {
-        while (!memoryNotFull(e)) {
+        while (!memoryEndNotFull(e)) {
             resizeBuffer();
         }
         if (!arrayNotFull()) {
