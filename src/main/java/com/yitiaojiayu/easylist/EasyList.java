@@ -20,20 +20,19 @@ public class EasyList<E> implements List<E> {
     private ByteBuffer buffer;
     private int useStart;
     private int useEnd;
-    private int limit;
-    private int count;
     private int[] index;
     private int[] size;
-
+    private int limit;
+    private int count;
 
     public EasyList() {
         this.buffer = ByteBuffer.allocateDirect(DEFAULT_BUFFER_CAPACITY);
         this.useStart = 0;
         this.useEnd = 0;
+        this.index = new int[DEFAULT_LIMIT_SIZE];
+        this.size = new int[DEFAULT_LIMIT_SIZE];
         this.limit = DEFAULT_LIMIT_SIZE;
         this.count = 0;
-        this.index = new int[limit];
-        this.size = new int[limit];
     }
 
     private void resizeBufferBase(int startPosition) {
@@ -50,7 +49,13 @@ public class EasyList<E> implements List<E> {
     }
 
     private void resizeBufferStart() {
-        resizeBufferBase(buffer.capacity() + useStart);
+        int bufferSize = buffer.capacity();
+        useStart += bufferSize;
+        useEnd += bufferSize;
+        for (int i = 0; i < count; i++) {
+            index[i] += bufferSize;
+        }
+        resizeBufferBase(useStart);
     }
 
     private boolean memoryEndNotFull(E e) {
