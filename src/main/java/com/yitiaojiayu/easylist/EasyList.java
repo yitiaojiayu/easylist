@@ -79,8 +79,23 @@ public class EasyList<E> implements List<E> {
         return KryoSimple.asObject(data);
     }
 
-    private void deleteDate(int i) {
-        EasyListNative.delete(buffer, index[i], size[i], useStart, useEnd);
+    private boolean deleteDate(int i) {
+        return EasyListNative.delete(buffer, index[i], size[i], useStart, useEnd);
+    }
+
+    private void delete(int i) {
+        int deletedSize = size[i];
+        if (deleteDate(i)) {
+            useEnd -= deletedSize;
+        } else {
+            useStart += deletedSize;
+        }
+        int numMoved = count - i - 1;
+        if (numMoved > 0) {
+            System.arraycopy(index, i + 1, index, i, numMoved);
+            System.arraycopy(size, i + 1, size, i, numMoved);
+        }
+        count--;
     }
 
     @Override
@@ -183,7 +198,7 @@ public class EasyList<E> implements List<E> {
     public boolean remove(Object o) {
         for (int i = 0; i < count; i++) {
             if (get(i).equals(o)) {
-                deleteDate(i);
+                delete(i);
                 return true;
             }
         }
@@ -239,7 +254,12 @@ public class EasyList<E> implements List<E> {
 
     @Override
     public E remove(int index) {
-        return null;
+        if (index < 0 || index >= count) {
+            throw new IndexOutOfBoundsException("EasyList: remove(int index): Index out of bounds. Index: " + index + ", Size: " + count);
+        }
+        E elementToRemove = getData(index);
+        deleteDate(index);
+        return elementToRemove;
     }
 
     @Override
