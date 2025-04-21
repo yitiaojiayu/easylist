@@ -124,8 +124,8 @@ public class EasyList<E> implements List<E> {
         count--;
     }
 
-    private void addData(int index, E element, boolean rightExt) {
-
+    private void addData(int index, byte[] data, boolean rightExt) {
+        EasyListNative.add(buffer, data, index, useStart, useEnd, rightExt);
     }
 
     @Override
@@ -285,23 +285,49 @@ public class EasyList<E> implements List<E> {
     }
 
     @Override
-    public void add(int index, E element) {
-        if (index < 0 || index > size()) {
-            throw new IndexOutOfBoundsException("EasyList: add(int index, E element): Index out of bounds. Index: " + index + ", Size: " + count);
+    public void add(int i, E e) {
+        if (i < 0 || i > size()) {
+            throw new IndexOutOfBoundsException("EasyList: add(int index, E element): Index out of bounds. Index: " + i + ", Size: " + count);
         }
-        byte[] data = KryoSimple.asByteArray(element);
+        byte[] data = KryoSimple.asByteArray(e);
         int dataLength = data.length;
-        int endSize = this.index[index];
-        int startSize = this.index[count] - endSize - dataLength;
-        boolean endExt = endSize > startSize;
-        if (endExt) {
-            if (memoryEndNotFull(element)) {
-                useEnd += dataLength;
-            }
-
+        int endSize;
+        int startSize;
+        boolean endExt;
+        if (i == count) {
+            endExt = true;
         } else {
+            endSize = useEnd - index[i];
+            startSize = index[i] - useStart;
+            endExt = endSize > startSize;
+        }
+        if (endExt) {
+            detectEnd(e);
+            addData(i, data, true);
+            useEnd += dataLength;
+        } else {
+            detectStart(e);
+            addData(i, data, false);
             useStart -= dataLength;
         }
+        int numMoved = count - i;
+        if (numMoved > 0) {
+            System.arraycopy(index, i, index, i + 1, numMoved);
+            System.arraycopy(size, i, size, i + 1, numMoved);
+        }
+        if (endExt) {
+            index[i] = index[i + 1];
+            for (int j = i + 1; j < i + numMoved; j++) {
+                index[j] += dataLength;
+            }
+        } else {
+            index[i] = index[i - 1];
+            for (int j = 0; j < ; j++) {
+
+            }
+        }
+        size[i] = dataLength;
+        count++;
     }
 
     @Override

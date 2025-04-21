@@ -107,4 +107,6 @@ final class EasyListNative {
     static native byte[] get(ByteBuffer buffer, int index, int size);
 
     static native boolean delete(ByteBuffer buffer, int index, int size, int useStart, int useEnd);
+
+    static native void add(ByteBuffer buffer, byte[] data, int index, int useStart, int useEnd, boolean rightExt);
 }
