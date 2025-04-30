@@ -1,7 +1,6 @@
 package com.yitiaojiayu.easylist;
 
 import java.io.InputStream;
-import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -11,7 +10,7 @@ import java.util.Locale;
  * @author yitiaojiayu
  * @date 2025/3/27
  */
-@SuppressWarnings({"unused", "java:S106", "java:S1075", "java:S112", "java:S108", "java:S3776", "java:S2259"})
+@SuppressWarnings({"unused", "java:S100", "java:S106", "java:S108", "java:S112", "java:S1075", "java:S2259", "java:S3776", "AlibabaLowerCamelCaseVariableNaming"})
 final class EasyListNative {
 /*
                 src/main/resources/
@@ -31,6 +30,7 @@ final class EasyListNative {
     static {
         try {
             loadNativeLibrary();
+            init();
         } catch (Exception e) {
             System.err.println("Load libraries failed: easylist.\n" + e);
             throw new UnsatisfiedLinkError("Failed to load native library: " + e.getMessage());
@@ -104,9 +104,8 @@ final class EasyListNative {
         }
     }
 
-    static native byte[] get(ByteBuffer buffer, int index, int size);
-
-    static native boolean delete(ByteBuffer buffer, int index, int size, int useStart, int useEnd);
-
-    static native void add(ByteBuffer buffer, byte[] data, int index, int useStart, int useEnd, boolean rightExt);
+    static native void init();
+    static native int new_object();
+    static native int size(int id);
+    static native boolean is_empty(int id);
 }

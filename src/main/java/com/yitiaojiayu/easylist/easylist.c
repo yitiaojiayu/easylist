@@ -1,37 +1,40 @@
 #include <jni.h>
-#include <stdlib.h>
-#include <string.h>
 #include "com_yitiaojiayu_easylist_EasyListNative.h"
 
-JNIEXPORT jbyteArray JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_get(JNIEnv *env, jclass clazz, jobject byteBuffer, jint offset, jint length)
+#include <stdlib.h>
+
+typedef struct
 {
-    jbyte *bufferStart = (jbyte *)(*env)->GetDirectBufferAddress(env, byteBuffer);
-    jbyteArray resultArray = (*env)->NewByteArray(env, length);
-    jbyte *sourcePtr = bufferStart + offset;
-    (*env)->SetByteArrayRegion(env, resultArray, 0, length, sourcePtr);
-    return resultArray;
+    int capacity;
+    int count;
+    char **data;
+} clazz_data;
+
+static int clazz_max = 16;
+static int clazz_id = 0;
+static char **data;
+
+JNIEXPORT void JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_init(JNIEnv *env, jclass clazz)
+{
+    data = malloc(clazz_max * sizeof(clazz_data *));
 }
 
-JNIEXPORT jboolean JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_delete(JNIEnv *env, jclass clazz, jobject byteBuffer, jint index, jint size, jint useStart, jint useEnd)
+JNIEXPORT jint JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_new_1object(JNIEnv *env, jclass clazz)
 {
-    jbyte *bufferStart = (jbyte *)(*env)->GetDirectBufferAddress(env, byteBuffer);
-    jint beforeSize = index - useStart;
-    jint afterSize = useEnd - (index + size);
-    if (beforeSize <= afterSize)
-    {
-        jbyte *dest = bufferStart + useStart + size;
-        jbyte *src = bufferStart + useStart;
-        if (beforeSize > 0)
-        {
-            memmove(dest, src, beforeSize);
-        }
-        return JNI_FALSE;
-    }
-    jbyte *dest = bufferStart + index;
-    jbyte *src = bufferStart + index + size;
-    if (afterSize > 0)
-    {
-        memmove(dest, src, afterSize);
-    }
-    return JNI_TRUE;
+    clazz_data *new_obj = malloc(sizeof(clazz_data));
+    new_obj->capacity = 16;
+    new_obj->count = 0;
+    new_obj->data = malloc(16 * sizeof(char *));
+    data[clazz_id] = new_obj;
+    return clazz_id++;
+}
+
+JNIEXPORT jint JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_size(JNIEnv *env, jclass clazz, jint id)
+{
+    return ((clazz_data *)data[id])->count;
+}
+
+JNIEXPORT jboolean JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_is_1empty(JNIEnv *env, jclass clazz, jint id)
+{
+    return ((clazz_data *)data[id])->count == 0;
 }

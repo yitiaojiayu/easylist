@@ -10,239 +10,76 @@ import java.util.*;
  * @author yitiaojiayu
  * @date 2025/3/27
  */
-@SuppressWarnings({"AlibabaConstantFieldShouldBeUpperCase", "PatternVariableCanBeUsed", "unchecked", "unused", "java:S106"})
 public class EasyList<E> implements List<E> {
 
-    private static final int DEFAULT_BUFFER_CAPACITY = 1024;
-    private static final int DEFAULT_LIMIT_SIZE = 10;
-    private static final int MULTIPLE = 2;
-
-    private ByteBuffer buffer;
-    private int useStart;
-    private int useEnd;
-    private int[] index;
-    private int[] size;
-    private int limit;
-    private int count;
+    private int id;
 
     public EasyList() {
-        this.buffer = ByteBuffer.allocateDirect(DEFAULT_BUFFER_CAPACITY);
-        this.useStart = 0;
-        this.useEnd = 0;
-        this.index = new int[DEFAULT_LIMIT_SIZE];
-        this.size = new int[DEFAULT_LIMIT_SIZE];
-        this.limit = DEFAULT_LIMIT_SIZE;
-        this.count = 0;
-    }
-
-    private void resizeBufferBase(int startPosition) {
-        ByteBuffer newBuffer = ByteBuffer.allocateDirect(buffer.capacity() * MULTIPLE);
-        buffer.position(useStart);
-        buffer.limit(useEnd);
-        newBuffer.position(startPosition);
-        newBuffer.put(buffer);
-        this.buffer = newBuffer;
-    }
-
-    private void resizeBufferEnd() {
-        resizeBufferBase(useStart);
-    }
-
-    private void resizeBufferStart() {
-        int bufferSize = buffer.capacity();
-        useStart += bufferSize;
-        useEnd += bufferSize;
-        for (int i = 0; i < count; i++) {
-            index[i] += bufferSize;
-        }
-        resizeBufferBase(useStart);
-    }
-
-    private boolean memoryEndNotFull(E e) {
-        int memorySize = KryoSimple.asByteArray(e).length;
-        int memoryRemaining = buffer.capacity() - useEnd;
-        return memoryRemaining >= memorySize;
-    }
-
-    private boolean memoryStartNotFull(E e) {
-        int memorySize = KryoSimple.asByteArray(e).length;
-        return useStart >= memorySize;
-    }
-
-    private void resizeArrays() {
-        int newLimit = limit * MULTIPLE;
-        int[] newIndex = new int[newLimit];
-        int[] newSize = new int[newLimit];
-        System.arraycopy(index, 0, newIndex, 0, limit);
-        System.arraycopy(size, 0, newSize, 0, limit);
-        index = newIndex;
-        size = newSize;
-        limit = newLimit;
-    }
-
-    private void arraysExt() {
-        if (limit <= count) {
-            resizeArrays();
-        }
-    }
-
-    private void detectEnd(E e) {
-        while (!memoryEndNotFull(e)) {
-            resizeBufferEnd();
-        }
-        arraysExt();
-    }
-
-    private void detectStart(E e) {
-        while (!memoryStartNotFull(e)) {
-            resizeBufferStart();
-        }
-        arraysExt();
-    }
-
-    private E getData(int i) {
-        byte[] data = EasyListNative.get(buffer, index[i], size[i]);
-        return KryoSimple.asObject(data);
-    }
-
-    private boolean deleteDate(int i) {
-        return EasyListNative.delete(buffer, index[i], size[i], useStart, useEnd);
-    }
-
-    private void delete(int i) {
-        int deletedSize = size[i];
-        if (deleteDate(i)) {
-            useEnd -= deletedSize;
-        } else {
-            useStart += deletedSize;
-        }
-        int numMoved = count - i - 1;
-        if (numMoved > 0) {
-            System.arraycopy(index, i + 1, index, i, numMoved);
-            System.arraycopy(size, i + 1, size, i, numMoved);
-        }
-        count--;
-    }
-
-    private void addData(int index, byte[] data, boolean rightExt) {
-        EasyListNative.add(buffer, data, index, useStart, useEnd, rightExt);
+        this.id = EasyListNative.new_object();
+        System.out.println(id);
     }
 
     @Override
     public int size() {
-        return count;
+        return EasyListNative.size(id);
     }
 
     @Override
     public boolean isEmpty() {
-        return count == 0;
+        return EasyListNative.is_empty(id);
     }
 
     @Override
     public boolean contains(Object o) {
-        for (int i = 0; i < count; i++) {
-            E element = get(i);
-            if (Objects.equals(element, o)) {
-                return true;
-            }
-        }
         return false;
     }
 
     @Override
     public Iterator<E> iterator() {
-        return new EasyIterator();
+        return null;
     }
 
-    private class EasyIterator implements Iterator<E> {
-        int cursor = 0;
-
-        @Override
-        public boolean hasNext() {
-            return cursor < count;
-        }
-
-        @Override
-        public E next() {
-            if (!hasNext()) {
-                throw new NoSuchElementException("EasyList: iterator(): No more elements");
-            }
-            E nextElement = EasyList.this.get(cursor);
-            cursor++;
-            return nextElement;
-        }
-    }
+    // private class EasyIterator implements Iterator<E> {
+    //     int cursor = 0;
+    //
+    //     @Override
+    //     public boolean hasNext() {
+    //         return cursor < count;
+    //     }
+    //
+    //     @Override
+    //     public E next() {
+    //         if (!hasNext()) {
+    //             throw new NoSuchElementException("EasyList: iterator(): No more elements");
+    //         }
+    //         E nextElement = EasyList.this.get(cursor);
+    //         cursor++;
+    //         return nextElement;
+    //     }
+    // }
 
     @Override
     public Object[] toArray() {
-        Object[] arr = new Object[count];
-        for (int i = 0; i < count; i++) {
-            arr[i] = get(i);
-        }
-        return arr;
+        return null;
     }
 
     @Override
     public <T> T[] toArray(T[] arr) {
-        if (arr == null) {
-            throw new NullPointerException("EasyList: toArray(T[] arr): Input array cannot be null");
-        }
-        if (arr.length < count) {
-            Class<?> componentType = arr.getClass().getComponentType();
-            T[] newArray = (T[]) Array.newInstance(componentType, count);
-            for (int i = 0; i < count; i++) {
-                try {
-                    newArray[i] = (T) get(i);
-                } catch (ClassCastException e) {
-                    throw new ArrayStoreException("EasyList: toArray(T[] arr): Element type mismatch during array copy");
-                }
-            }
-            return newArray;
-        }
-        for (int i = 0; i < count; i++) {
-            try {
-                arr[i] = (T) get(i);
-            } catch (ClassCastException e) {
-                throw new ArrayStoreException("EasyList: toArray(T[] arr): Element type mismatch during array copy");
-            }
-        }
-        if (arr.length > count) {
-            arr[count] = null;
-        }
-        return arr;
+        return null;
     }
 
     @Override
     public boolean add(E e) {
-        detectEnd(e);
-        byte[] data = KryoSimple.asByteArray(e);
-        int dataLength = data.length;
-        buffer.put(data);
-        index[count] = useEnd;
-        size[count] = dataLength;
-        useEnd += dataLength;
-        count++;
         return true;
     }
 
     @Override
     public boolean remove(Object o) {
-        for (int i = 0; i < count; i++) {
-            if (get(i).equals(o)) {
-                delete(i);
-                return true;
-            }
-        }
         return false;
     }
 
     @Override
     public boolean containsAll(Collection<?> c) {
-        for (Object o : c) {
-            if (!contains(o)) {
-                return false;
-            }
-        }
         return true;
     }
 
@@ -273,10 +110,7 @@ public class EasyList<E> implements List<E> {
 
     @Override
     public E get(int i) {
-        if (i < 0 || i >= count) {
-            throw new IndexOutOfBoundsException("EasyList: get(int index): failed, Because Index: " + i + ", Size: " + count);
-        }
-        return getData(i);
+        return null;
     }
 
     @Override
@@ -286,58 +120,12 @@ public class EasyList<E> implements List<E> {
 
     @Override
     public void add(int i, E e) {
-        if (i < 0 || i > size()) {
-            throw new IndexOutOfBoundsException("EasyList: add(int index, E element): Index out of bounds. Index: " + i + ", Size: " + count);
-        }
-        byte[] data = KryoSimple.asByteArray(e);
-        int dataLength = data.length;
-        int endSize;
-        int startSize;
-        boolean endExt;
-        if (i == count) {
-            endExt = true;
-        } else {
-            endSize = useEnd - index[i];
-            startSize = index[i] - useStart;
-            endExt = endSize > startSize;
-        }
-        if (endExt) {
-            detectEnd(e);
-            addData(i, data, true);
-            useEnd += dataLength;
-        } else {
-            detectStart(e);
-            addData(i, data, false);
-            useStart -= dataLength;
-        }
-        int numMoved = count - i;
-        if (numMoved > 0) {
-            System.arraycopy(index, i, index, i + 1, numMoved);
-            System.arraycopy(size, i, size, i + 1, numMoved);
-        }
-        if (endExt) {
-            index[i] = index[i + 1];
-            for (int j = i + 1; j < i + numMoved; j++) {
-                index[j] += dataLength;
-            }
-        } else {
-            index[i] = index[i - 1];
-            for (int j = 0; j < ; j++) {
 
-            }
-        }
-        size[i] = dataLength;
-        count++;
     }
 
     @Override
     public E remove(int index) {
-        if (index < 0 || index >= count) {
-            throw new IndexOutOfBoundsException("EasyList: remove(int index): Index out of bounds. Index: " + index + ", Size: " + count);
-        }
-        E elementToRemove = getData(index);
-        deleteDate(index);
-        return elementToRemove;
+        return null;
     }
 
     @Override
@@ -367,49 +155,16 @@ public class EasyList<E> implements List<E> {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("[");
-        int i = 0;
-        while (count > i) {
-            sb.append(getData(i));
-            if (count > i + 1) {
-                sb.append(", ");
-            }
-            i++;
-        }
-        sb.append("]");
-        return sb.toString();
+        return null;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof List)) {
-            return false;
-        }
-        List<?> other = (List<?>) o;
-        if (size() != other.size()) {
-            return false;
-        }
-        for (int i = 0; i < count; i++) {
-            E thisElement = get(i);
-            Object otherElement = other.get(i);
-            if (!Objects.equals(thisElement, otherElement)) {
-                return false;
-            }
-        }
         return true;
     }
 
     @Override
     public int hashCode() {
-        int hashCode = 1;
-        for (int i = 0; i < count; i++) {
-            E element = get(i);
-            hashCode = 31 * hashCode + (element == null ? 0 : element.hashCode());
-        }
-        return hashCode;
+        return 0;
     }
 }
