@@ -18,6 +18,11 @@ public class EasyList<E> implements List<E> {
         this.id = EasyListNative.new_object();
     }
 
+    public EasyList(Collection<? extends E> c) {
+        this.id = EasyListNative.new_object();
+        addAll(c);
+    }
+
     @Override
     public int size() {
         return EasyListNative.size(id);
