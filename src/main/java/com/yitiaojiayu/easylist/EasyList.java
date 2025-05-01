@@ -122,8 +122,7 @@ public class EasyList<E> implements List<E> {
 
     @Override
     public boolean remove(Object o) {
-        int count = size();
-        for (int i = 0; i < count; i++) {
+        for (int i = 0; i < size(); i++) {
             if (get(i).equals(o)) {
                 remove(i);
                 return true;
@@ -167,8 +166,7 @@ public class EasyList<E> implements List<E> {
     @Override
     public boolean removeAll(Collection<?> c) {
         boolean modified = false;
-        int count = size();
-        for (int i = 0; i < count; i++) {
+        for (int i = 0; i < size(); i++) {
             if (c.contains(get(i))) {
                 remove(i);
                 i--;
@@ -181,8 +179,7 @@ public class EasyList<E> implements List<E> {
     @Override
     public boolean retainAll(Collection<?> c) {
         boolean modified = false;
-        int count = size();
-        for (int i = 0; i < count; i++) {
+        for (int i = 0; i < size(); i++) {
             if (!c.contains(get(i))) {
                 remove(i);
                 i--;
@@ -194,7 +191,10 @@ public class EasyList<E> implements List<E> {
 
     @Override
     public void clear() {
-
+        for (int i = 0; i < size(); i++) {
+            remove(i);
+            i--;
+        }
     }
 
     @Override
