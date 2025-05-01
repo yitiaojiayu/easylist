@@ -112,4 +112,6 @@ final class EasyListNative {
     static native byte[] get(int id, int index);
     static native void remove(int id, int index);
     static native void set(int id, int index, byte[] data);
+
+    static native int mod_count(int id);
 }

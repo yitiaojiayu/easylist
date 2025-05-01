@@ -1,6 +1,5 @@
 #include <jni.h>
 #include "com_yitiaojiayu_easylist_EasyListNative.h"
-
 #include <stdlib.h>
 #include <string.h>
 
@@ -16,6 +15,7 @@ typedef struct
     int count;
     int begin;
     int end;
+    int mod_count;
     element_data **data;
 } clazz_data;
 
@@ -46,6 +46,7 @@ JNIEXPORT jint JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_new_1object(
     new_obj->count = 0;
     new_obj->begin = 4;
     new_obj->end = 4;
+    new_obj->mod_count = 0;
     new_obj->data = malloc(16 * sizeof(element_data *));
     data[clazz_id] = new_obj;
     return clazz_id++;
@@ -121,6 +122,7 @@ JNIEXPORT jboolean JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_add(JNIE
     memcpy(data[id]->data[index]->data, bytes, len);
     (*env)->ReleaseByteArrayElements(env, obj, bytes, JNI_ABORT);
     data[id]->count++;
+    data[id]->mod_count++;
     return JNI_TRUE;
 }
 
@@ -169,6 +171,7 @@ JNIEXPORT void JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_remove(JNIEn
         data[id]->begin++;
     }
     data[id]->count--;
+    data[id]->mod_count++;
 }
 
 JNIEXPORT void JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_set(JNIEnv *env, jclass clazz, jint id, jint index, jbyteArray obj)
@@ -188,4 +191,9 @@ JNIEXPORT void JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_set(JNIEnv *
     data[id]->data[index]->size = len;
     memcpy(data[id]->data[index]->data, bytes, len);
     (*env)->ReleaseByteArrayElements(env, obj, bytes, JNI_ABORT);
+}
+
+JNIEXPORT jint JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_mod_1count(JNIEnv *env, jclass clazz, jint id)
+{
+    return data[id]->mod_count;
 }
