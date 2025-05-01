@@ -170,3 +170,22 @@ JNIEXPORT void JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_remove(JNIEn
     }
     data[id]->count--;
 }
+
+JNIEXPORT void JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_set(JNIEnv *env, jclass clazz, jint id, jint index, jbyteArray obj)
+{
+    if (index < 0 || index >= data[id]->count)
+    {
+        char msg[64];
+        snprintf(msg, sizeof(msg), "EasyList -> set -> index: %d, range: 0 ~ %d", index, data[id]->count - 1);
+        (*env)->ThrowNew(env, ArrayIndexOutOfBoundsException, msg);
+        return;
+    }
+    jbyte *bytes = (*env)->GetByteArrayElements(env, obj, NULL);
+    int len = (*env)->GetArrayLength(env, obj);
+    index += data[id]->begin;
+    free(data[id]->data[index]->data);
+    data[id]->data[index]->data = malloc(len);
+    data[id]->data[index]->size = len;
+    memcpy(data[id]->data[index]->data, bytes, len);
+    (*env)->ReleaseByteArrayElements(env, obj, bytes, JNI_ABORT);
+}
