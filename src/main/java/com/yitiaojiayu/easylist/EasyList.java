@@ -260,13 +260,91 @@ public class EasyList<E> implements List<E> {
 
     @Override
     public ListIterator<E> listIterator() {
-        return null;
+        return new EasyListIterator(0);
     }
 
     @Override
     public ListIterator<E> listIterator(int index) {
-        return null;
+        return new EasyListIterator(index);
     }
+
+    private class EasyListIterator implements ListIterator<E> {
+        int cursor;
+        int lastRet = -1;
+
+        public EasyListIterator(int index) {
+            if (index < 0 || index > size()) {
+                throw new IndexOutOfBoundsException("EasyList: ListIterator: Index Error");
+            }
+            this.cursor = index;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return cursor < size();
+        }
+
+        @Override
+        public E next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException("EasyList: ListIterator: next: No next");
+            }
+            lastRet = cursor;
+            return get(cursor++);
+        }
+
+        @Override
+        public boolean hasPrevious() {
+            return cursor > 0;
+        }
+
+        @Override
+        public E previous() {
+            if (!hasPrevious()) {
+                throw new NoSuchElementException("EasyList: ListIterator: previous: no previous");
+            }
+            lastRet = --cursor;
+            return get(cursor);
+        }
+
+        @Override
+        public int nextIndex() {
+            return cursor;
+        }
+
+        @Override
+        public int previousIndex() {
+            return cursor - 1;
+        }
+
+        @Override
+        public void remove() {
+            if (lastRet == -1){
+                throw new IllegalStateException("EasyList: ListIterator: remove: can only be called once after next()");
+            }
+            EasyList.this.remove(lastRet);
+            if (lastRet < cursor) {
+                cursor--;
+            }
+            lastRet = -1;
+        }
+
+        @Override
+        public void set(E e) {
+            if (lastRet == -1){
+                throw new IllegalStateException("EasyList: ListIterator: remove: can only be called once after next()");
+            }
+            EasyList.this.set(lastRet, e);
+        }
+
+        @Override
+        public void add(E e) {
+            EasyList.this.add(cursor, e);
+            cursor++;
+            lastRet = -1;
+        }
+    }
+
 
     @Override
     public List<E> subList(int fromIndex, int toIndex) {
