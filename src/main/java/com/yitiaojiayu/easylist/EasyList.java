@@ -158,11 +158,14 @@ public class EasyList<E> implements List<E> {
         if (c == null) {
             throw new NullPointerException("EasyList: addAll(Collection<? extends E> c): list is null");
         }
-        if (c.isEmpty()) {
+        Object[] a = c.toArray();
+        int len = a.length;
+        if (len == 0) {
             return false;
         }
-        for (E e : c) {
-            add(e);
+        for (Object o : a) {
+            E element = (E) o;
+            add(element);
         }
         return true;
     }
@@ -172,11 +175,14 @@ public class EasyList<E> implements List<E> {
         if (c == null) {
             throw new NullPointerException("EasyList: addAll(Collection<? extends E> c): list is null");
         }
-        if (c.isEmpty()) {
+        Object[] a = c.toArray();
+        int len = a.length;
+        if (len == 0) {
             return false;
         }
-        for (E e : c) {
-            add(index++, e);
+        for (Object o : a) {
+            E element = (E) o;
+            add(index++, element);
         }
         return true;
     }
