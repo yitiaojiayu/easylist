@@ -86,10 +86,13 @@ JNIEXPORT jboolean JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_add(JNIE
         }
         else
         {
+
             index += data[id]->begin;
         }
         data[id]->end++;
+        data[id]->data[index] = malloc(sizeof(element_data));
         data[id]->data[index]->data = malloc(len);
+
     }
     else
     {
@@ -112,7 +115,8 @@ JNIEXPORT jboolean JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_add(JNIE
             index += data[id]->begin;
         }
         data[id]->begin--;
-        data[id]->data[--index]->data = malloc(len);
+        data[id]->data[--index] = malloc(sizeof(element_data));
+        data[id]->data[index]->data = malloc(len);
     }
     data[id]->data[index]->size = len;
     memcpy(data[id]->data[index]->data, bytes, len);
