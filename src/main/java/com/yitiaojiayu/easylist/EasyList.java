@@ -323,7 +323,7 @@ public class EasyList<E> implements List<E> {
         @Override
         public E next() {
             if (modCount != EasyListNative.mod_count(id)) {
-                throw new ConcurrentModificationException("EasyList: iterator: next: The list was also modified");
+                throw new ConcurrentModificationException("EasyList: listIterator: next: The list was also modified");
             }
             if (!hasNext()) {
                 throw new NoSuchElementException("EasyList: listIterator: next: No next");
@@ -340,7 +340,7 @@ public class EasyList<E> implements List<E> {
         @Override
         public E previous() {
             if (modCount != EasyListNative.mod_count(id)) {
-                throw new ConcurrentModificationException("EasyList: iterator: next: The list was also modified");
+                throw new ConcurrentModificationException("EasyList: listIterator: next: The list was also modified");
             }
             if (!hasPrevious()) {
                 throw new NoSuchElementException("EasyList: listIterator: previous: no previous");
@@ -362,7 +362,7 @@ public class EasyList<E> implements List<E> {
         @Override
         public void remove() {
             if (modCount != EasyListNative.mod_count(id)) {
-                throw new ConcurrentModificationException("EasyList: iterator: next: The list was also modified");
+                throw new ConcurrentModificationException("EasyList: listIterator: next: The list was also modified");
             }
             if (lastRet == -1) {
                 throw new IllegalStateException("EasyList: listIterator: remove: can only be called once after next()");
@@ -378,7 +378,7 @@ public class EasyList<E> implements List<E> {
         @Override
         public void set(E e) {
             if (modCount != EasyListNative.mod_count(id)) {
-                throw new ConcurrentModificationException("EasyList: iterator: next: The list was also modified");
+                throw new ConcurrentModificationException("EasyList: listIterator: next: The list was also modified");
             }
             if (lastRet == -1) {
                 throw new IllegalStateException("EasyList: listIterator: remove: can only be called once after next()");
@@ -389,7 +389,7 @@ public class EasyList<E> implements List<E> {
         @Override
         public void add(E e) {
             if (modCount != EasyListNative.mod_count(id)) {
-                throw new ConcurrentModificationException("EasyList: iterator: next: The list was also modified");
+                throw new ConcurrentModificationException("EasyList: listIterator: next: The list was also modified");
             }
             EasyList.this.add(cursor, e);
             cursor++;
@@ -406,22 +406,33 @@ public class EasyList<E> implements List<E> {
     private class EasySubList extends AbstractList<E> {
         private final int offset;
         private int size;
+        private int subModCount;
 
         EasySubList(int fromIndex, int toIndex) {
-            if (fromIndex < 0 || toIndex > size() || fromIndex > toIndex) {
+            if (fromIndex < 0 || toIndex > EasyList.this.size()) {
                 throw new IndexOutOfBoundsException("EasyList: subList: Index Error");
+            }
+            if (fromIndex > toIndex) {
+                throw new IllegalArgumentException("EasyList: subList: Args Error");
             }
             this.offset = fromIndex;
             this.size = toIndex - fromIndex;
+            this.subModCount = EasyListNative.mod_count(id);
         }
 
         @Override
         public int size() {
+            if (subModCount != EasyListNative.mod_count(id)) {
+                throw new ConcurrentModificationException("EasyList: subList: next: The list was also modified");
+            }
             return size;
         }
 
         @Override
         public E get(int index) {
+            if (subModCount != EasyListNative.mod_count(id)) {
+                throw new ConcurrentModificationException("EasyList: subList: next: The list was also modified");
+            }
             if (index < 0 || index >= size) {
                 throw new IndexOutOfBoundsException("EasyList: subList: get: Index Error");
             }
@@ -430,6 +441,9 @@ public class EasyList<E> implements List<E> {
 
         @Override
         public E set(int index, E element) {
+            if (subModCount != EasyListNative.mod_count(id)) {
+                throw new ConcurrentModificationException("EasyList: subList: next: The list was also modified");
+            }
             if (index < 0 || index >= size) {
                 throw new IndexOutOfBoundsException("EasyList: subList: set: Index Error");
             }
@@ -438,20 +452,28 @@ public class EasyList<E> implements List<E> {
 
         @Override
         public void add(int index, E element) {
+            if (subModCount != EasyListNative.mod_count(id)) {
+                throw new ConcurrentModificationException("EasyList: subList: next: The list was also modified");
+            }
             if (index < 0 || index > size) {
                 throw new IndexOutOfBoundsException("EasyList: subList: add: Index Error");
             }
             EasyList.this.add(offset + index, element);
             size++;
+            this.subModCount = EasyListNative.mod_count(id);
         }
 
         @Override
         public E remove(int index) {
+            if (subModCount != EasyListNative.mod_count(id)) {
+                throw new ConcurrentModificationException("EasyList: subList: next: The list was also modified");
+            }
             if (index < 0 || index >= size) {
                 throw new IndexOutOfBoundsException("EasyList: subList: remove: Index Error");
             }
             E removed = EasyList.this.remove(offset + index);
             size--;
+            this.subModCount = EasyListNative.mod_count(id);
             return removed;
         }
     }
