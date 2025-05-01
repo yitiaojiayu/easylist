@@ -222,12 +222,40 @@ public class EasyList<E> implements List<E> {
 
     @Override
     public int indexOf(Object o) {
-        return 0;
+        int count = size();
+        if (o == null) {
+            for (int i = 0; i < count; i++) {
+                if (get(i) == null) {
+                    return i;
+                }
+            }
+        } else {
+            for (int i = 0; i < count; i++) {
+                if (o.equals(get(i))) {
+                    return i;
+                }
+            }
+        }
+        return -1;
     }
 
     @Override
     public int lastIndexOf(Object o) {
-        return 0;
+        int count = size();
+        if (o == null) {
+            for (int i = count - 1; i >= 0; i--) {
+                if (get(i) == null) {
+                    return i;
+                }
+            }
+        } else {
+            for (int i = count - 1; i >= 0; i--) {
+                if (o.equals(get(i))) {
+                    return i;
+                }
+            }
+        }
+        return -1;
     }
 
     @Override
