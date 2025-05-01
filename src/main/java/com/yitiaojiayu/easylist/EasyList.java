@@ -144,22 +144,52 @@ public class EasyList<E> implements List<E> {
 
     @Override
     public boolean addAll(Collection<? extends E> c) {
-        return false;
+        if (c == null || c.isEmpty()) {
+            return false;
+        }
+        for (E e : c) {
+            add(e);
+        }
+        return true;
     }
 
     @Override
     public boolean addAll(int index, Collection<? extends E> c) {
-        return false;
+        if (c == null || c.isEmpty()) {
+            return false;
+        }
+        for (E e : c) {
+            add(index++, e);
+        }
+        return true;
     }
 
     @Override
     public boolean removeAll(Collection<?> c) {
-        return false;
+        boolean modified = false;
+        int count = size();
+        for (int i = 0; i < count; i++) {
+            if (c.contains(get(i))) {
+                remove(i);
+                i--;
+                modified = true;
+            }
+        }
+        return modified;
     }
 
     @Override
     public boolean retainAll(Collection<?> c) {
-        return false;
+        boolean modified = false;
+        int count = size();
+        for (int i = 0; i < count; i++) {
+            if (!c.contains(get(i))) {
+                remove(i);
+                i--;
+                modified = true;
+            }
+        }
+        return modified;
     }
 
     @Override
