@@ -108,8 +108,8 @@ public class EasyList<E> implements List<E> {
     }
 
     @Override
-    public E get(int i) {
-        return KryoSimple.asObject(EasyListNative.get(id, i));
+    public E get(int index) {
+        return KryoSimple.asObject(EasyListNative.get(id, index));
     }
 
     @Override
@@ -118,8 +118,8 @@ public class EasyList<E> implements List<E> {
     }
 
     @Override
-    public void add(int i, E e) {
-        EasyListNative.add(id, i, KryoSimple.asByteArray(e));
+    public void add(int index, E e) {
+        EasyListNative.add(id, index, KryoSimple.asByteArray(e));
     }
 
     @Override

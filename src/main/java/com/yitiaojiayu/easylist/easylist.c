@@ -5,13 +5,17 @@
 #include <string.h>
 
 static jclass ArrayIndexOutOfBoundsException;
+typedef struct {
+    int size;
+    char *data;
+} element_data;
 typedef struct
 {
     int capacity;
     int count;
     int begin;
     int end;
-    char **data;
+    element_data **data;
 } clazz_data;
 
 static int clazz_max = 16;
@@ -41,7 +45,7 @@ JNIEXPORT jint JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_new_1object(
     new_obj->count = 0;
     new_obj->begin = 4;
     new_obj->end = 4;
-    new_obj->data = malloc(16 * sizeof(char *));
+    new_obj->data = malloc(16 * sizeof(element_data *));
     data[clazz_id] = new_obj;
     return clazz_id++;
 }
@@ -63,6 +67,7 @@ JNIEXPORT jboolean JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_add(JNIE
         char msg[64];
         snprintf(msg, sizeof(msg), "EasyList -> add -> index: %d, range: 0 ~ %d", index, data[id]->count);
         (*env)->ThrowNew(env, ArrayIndexOutOfBoundsException, msg);
+        return JNI_FALSE;
     }
     jbyte *bytes = (*env)->GetByteArrayElements(env, obj, NULL);
     int len = (*env)->GetArrayLength(env, obj);
@@ -71,7 +76,7 @@ JNIEXPORT jboolean JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_add(JNIE
         if (data[id]->end >= data[id]->capacity)
         {
             data[id]->capacity *= 2;
-            char **temp = realloc(data[id]->data, data[id]->capacity * sizeof(char *));
+            element_data **temp = realloc(data[id]->data, data[id]->capacity * sizeof(element_data *));
             data[id]->data = temp;
         }
         if (index != data[id]->count)
@@ -84,14 +89,14 @@ JNIEXPORT jboolean JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_add(JNIE
             index += data[id]->begin;
         }
         data[id]->end++;
-        data[id]->data[index] = malloc(len);
+        data[id]->data[index]->data = malloc(len);
     }
     else
     {
         if (data[id]->begin <= 0)
         {
             data[id]->capacity *= 2;
-            char **temp = realloc(data[id]->data, data[id]->capacity * sizeof(char *));
+            element_data **temp = realloc(data[id]->data, data[id]->capacity * sizeof(element_data *));
             memcpy(&(temp[data[id]->capacity / 2]), &(temp[0]), data[id]->end * sizeof(char *));
             data[id]->data = temp;
             data[id]->begin += data[id]->capacity / 2;
@@ -107,9 +112,10 @@ JNIEXPORT jboolean JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_add(JNIE
             index += data[id]->begin;
         }
         data[id]->begin--;
-        data[id]->data[--index] = malloc(len);
+        data[id]->data[--index]->data = malloc(len);
     }
-    memcpy(data[id]->data[index], bytes, len);
+    data[id]->data[index]->size = len;
+    memcpy(data[id]->data[index]->data, bytes, len);
     (*env)->ReleaseByteArrayElements(env, obj, bytes, JNI_ABORT);
     data[id]->count++;
     return JNI_TRUE;
@@ -117,4 +123,14 @@ JNIEXPORT jboolean JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_add(JNIE
 
 JNIEXPORT jbyteArray JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_get(JNIEnv *env, jclass clazz, jint id, jint index)
 {
+    if (index < 0 || index >= data[id]->count)
+    {
+        char msg[64];
+        snprintf(msg, sizeof(msg), "EasyList -> get -> index: %d, range: 0 ~ %d", index, data[id]->count - 1);
+        (*env)->ThrowNew(env, ArrayIndexOutOfBoundsException, msg);
+        return NULL;
+    }
+    jbyteArray javaByteArray = (*env)->NewByteArray(env, data[id]->data[index]->size);
+    (*env)->SetByteArrayRegion(env, javaByteArray, 0, data[id]->data[index]->size, data[id]->data[index]->data);
+    return javaByteArray;
 }
