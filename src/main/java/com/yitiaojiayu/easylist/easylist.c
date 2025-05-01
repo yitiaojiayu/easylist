@@ -5,7 +5,8 @@
 #include <string.h>
 
 static jclass ArrayIndexOutOfBoundsException;
-typedef struct {
+typedef struct
+{
     int size;
     char *data;
 } element_data;
@@ -82,11 +83,10 @@ JNIEXPORT jboolean JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_add(JNIE
         if (index != data[id]->count)
         {
             index += data[id]->begin;
-            memmove(&(data[id]->data[index + 1]), &(data[id]->data[index]), (data[id]->end - index) * sizeof(char *));
+            memmove(&(data[id]->data[index + 1]), &(data[id]->data[index]), (data[id]->end - index) * sizeof(element_data *));
         }
         else
         {
-
             index += data[id]->begin;
         }
         data[id]->end++;
@@ -99,7 +99,7 @@ JNIEXPORT jboolean JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_add(JNIE
         {
             data[id]->capacity *= 2;
             element_data **temp = realloc(data[id]->data, data[id]->capacity * sizeof(element_data *));
-            memcpy(&(temp[data[id]->capacity / 2]), &(temp[0]), data[id]->end * sizeof(char *));
+            memcpy(&(temp[data[id]->capacity / 2]), &(temp[0]), data[id]->end * sizeof(element_data *));
             data[id]->data = temp;
             data[id]->begin += data[id]->capacity / 2;
             data[id]->end += data[id]->capacity / 2;
@@ -107,7 +107,7 @@ JNIEXPORT jboolean JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_add(JNIE
         if (index != 0)
         {
             index += data[id]->begin;
-            memmove(&(data[id]->data[data[id]->begin - 1]), &(data[id]->data[data[id]->begin]), (index - data[id]->begin) * sizeof(char *));
+            memmove(&(data[id]->data[data[id]->begin - 1]), &(data[id]->data[data[id]->begin]), (index - data[id]->begin) * sizeof(element_data *));
         }
         else
         {
@@ -137,4 +137,36 @@ JNIEXPORT jbyteArray JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_get(JN
     jbyteArray javaByteArray = (*env)->NewByteArray(env, data[id]->data[index]->size);
     (*env)->SetByteArrayRegion(env, javaByteArray, 0, data[id]->data[index]->size, data[id]->data[index]->data);
     return javaByteArray;
+}
+
+JNIEXPORT void JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_remove(JNIEnv *env, jclass clazz, jint id, jint index)
+{
+    if (index < 0 || index >= data[id]->count)
+    {
+        char msg[64];
+        snprintf(msg, sizeof(msg), "EasyList -> remove -> index: %d, range: 0 ~ %d", index, data[id]->count - 1);
+        (*env)->ThrowNew(env, ArrayIndexOutOfBoundsException, msg);
+        return;
+    }
+    free(data[id]->data[index + data[id]->begin]->data);
+    free(data[id]->data[index + data[id]->begin]);
+    if (index > data[id]->count - index - 1)
+    {
+        if (index != data[id]->count - 1)
+        {
+            index += data[id]->begin;
+            memmove(&(data[id]->data[index]), &(data[id]->data[index + 1]), (data[id]->end - index - 1) * sizeof(element_data *));
+        }
+        data[id]->end--;
+    }
+    else
+    {
+        if (index != 0)
+        {
+            index += data[id]->begin;
+            memmove(&(data[id]->data[data[id]->begin + 1]), &(data[id]->data[data[id]->begin]), (index - data[id]->begin) * sizeof(element_data *));
+        }
+        data[id]->begin++;
+    }
+    data[id]->count--;
 }

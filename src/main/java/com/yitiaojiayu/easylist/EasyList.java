@@ -64,12 +64,43 @@ public class EasyList<E> implements List<E> {
 
     @Override
     public Object[] toArray() {
-        return null;
+        int count = size();
+        Object[] arr = new Object[count];
+        for (int i = 0; i < count; i++) {
+            arr[i] = get(i);
+        }
+        return arr;
     }
 
     @Override
     public <T> T[] toArray(T[] arr) {
-        return null;
+        int count = size();
+        if (arr == null) {
+            throw new NullPointerException("EasyList: toArray(T[] arr): Input array cannot be null");
+        }
+        if (arr.length < count) {
+            Class<?> componentType = arr.getClass().getComponentType();
+            T[] newArray = (T[]) Array.newInstance(componentType, count);
+            for (int i = 0; i < count; i++) {
+                try {
+                    newArray[i] = (T) get(i);
+                } catch (ClassCastException e) {
+                    throw new ArrayStoreException("EasyList: toArray(T[] arr): Element type mismatch during array copy");
+                }
+            }
+            return newArray;
+        }
+        for (int i = 0; i < count; i++) {
+            try {
+                arr[i] = (T) get(i);
+            } catch (ClassCastException e) {
+                throw new ArrayStoreException("EasyList: toArray(T[] arr): Element type mismatch during array copy");
+            }
+        }
+        if (arr.length > count) {
+            arr[count] = null;
+        }
+        return arr;
     }
 
     @Override
@@ -129,7 +160,9 @@ public class EasyList<E> implements List<E> {
 
     @Override
     public E remove(int index) {
-        return null;
+        E e = get(index);
+        EasyListNative.remove(id, index);
+        return e;
     }
 
     @Override
