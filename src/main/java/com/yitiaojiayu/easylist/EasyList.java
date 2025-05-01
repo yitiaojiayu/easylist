@@ -228,8 +228,9 @@ public class EasyList<E> implements List<E> {
 
     @Override
     public E set(int index, E element) {
+        E oldElement = get(index);
         EasyListNative.set(id, index, KryoSimple.asByteArray(element));
-        return element;
+        return oldElement;
     }
 
     @Override
