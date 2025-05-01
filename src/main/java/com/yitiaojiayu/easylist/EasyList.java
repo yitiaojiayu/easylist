@@ -154,16 +154,47 @@ public class EasyList<E> implements List<E> {
 
     @Override
     public String toString() {
-        return null;
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        for (int i = 0; i < size(); i++) {
+            sb.append(get(i));
+            if (size() > i + 1) {
+                sb.append(", ");
+            }
+        }
+        sb.append("]");
+        return sb.toString();
     }
 
     @Override
     public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof List)) {
+            return false;
+        }
+        List<?> other = (List<?>) o;
+        if (size() != other.size()) {
+            return false;
+        }
+        for (int i = 0; i < size(); i++) {
+            E thisElement = get(i);
+            Object otherElement = other.get(i);
+            if (!Objects.equals(thisElement, otherElement)) {
+                return false;
+            }
+        }
         return true;
     }
 
     @Override
     public int hashCode() {
-        return 0;
+        int hashCode = 1;
+        for (int i = 0; i < size(); i++) {
+            E element = get(i);
+            hashCode = 31 * hashCode + (element == null ? 0 : element.hashCode());
+        }
+        return hashCode;
     }
 }
