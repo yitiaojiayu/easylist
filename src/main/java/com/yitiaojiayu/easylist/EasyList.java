@@ -45,6 +45,7 @@ public class EasyList<E> implements List<E> {
 
     private class EasyIterator implements Iterator<E> {
         int cursor = 0;
+        int lastRet = -1;
 
         @Override
         public boolean hasNext() {
@@ -54,11 +55,22 @@ public class EasyList<E> implements List<E> {
         @Override
         public E next() {
             if (!hasNext()) {
-                throw new NoSuchElementException("EasyList: iterator(): No more elements");
+                throw new NoSuchElementException("EasyList: iterator: next: No more elements");
             }
             E nextElement = EasyList.this.get(cursor);
+            lastRet = cursor;
             cursor++;
             return nextElement;
+        }
+
+        @Override
+        public void remove() {
+            if (lastRet == -1) {
+                throw new IllegalStateException("EasyList: iterator: remove: can only be called once after next()");
+            }
+            EasyList.this.remove(lastRet);
+            cursor--;
+            lastRet = -1;
         }
     }
 
@@ -73,34 +85,34 @@ public class EasyList<E> implements List<E> {
     }
 
     @Override
-    public <T> T[] toArray(T[] arr) {
+    public <T> T[] toArray(T[] a) {
         int count = size();
-        if (arr == null) {
-            throw new NullPointerException("EasyList: toArray(T[] arr): Input array cannot be null");
+        if (a == null) {
+            throw new NullPointerException("EasyList: toArray(T[] a): Input array cannot be null");
         }
-        if (arr.length < count) {
-            Class<?> componentType = arr.getClass().getComponentType();
+        if (a.length < count) {
+            Class<?> componentType = a.getClass().getComponentType();
             T[] newArray = (T[]) Array.newInstance(componentType, count);
             for (int i = 0; i < count; i++) {
                 try {
                     newArray[i] = (T) get(i);
                 } catch (ClassCastException e) {
-                    throw new ArrayStoreException("EasyList: toArray(T[] arr): Element type mismatch during array copy");
+                    throw new ArrayStoreException("EasyList: toArray(T[] a): Element type mismatch during array copy");
                 }
             }
             return newArray;
         }
         for (int i = 0; i < count; i++) {
             try {
-                arr[i] = (T) get(i);
+                a[i] = (T) get(i);
             } catch (ClassCastException e) {
-                throw new ArrayStoreException("EasyList: toArray(T[] arr): Element type mismatch during array copy");
+                throw new ArrayStoreException("EasyList: toArray(T[] a): Element type mismatch during array copy");
             }
         }
-        if (arr.length > count) {
-            arr[count] = null;
+        if (a.length > count) {
+            a[count] = null;
         }
-        return arr;
+        return a;
     }
 
     @Override
@@ -110,11 +122,23 @@ public class EasyList<E> implements List<E> {
 
     @Override
     public boolean remove(Object o) {
+        int count = size();
+        for (int i = 0; i < count; i++) {
+            if (get(i).equals(o)) {
+                remove(i);
+                return true;
+            }
+        }
         return false;
     }
 
     @Override
     public boolean containsAll(Collection<?> c) {
+        for (Object o : c) {
+            if (!contains(o)) {
+                return false;
+            }
+        }
         return true;
     }
 
