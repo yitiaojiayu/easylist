@@ -16,7 +16,6 @@ public class EasyList<E> implements List<E> {
 
     public EasyList() {
         this.id = EasyListNative.new_object();
-        System.out.println(id);
     }
 
     @Override
@@ -70,7 +69,7 @@ public class EasyList<E> implements List<E> {
 
     @Override
     public boolean add(E e) {
-        return true;
+        return EasyListNative.add(id, size(), KryoSimple.asByteArray(e));
     }
 
     @Override
@@ -110,7 +109,7 @@ public class EasyList<E> implements List<E> {
 
     @Override
     public E get(int i) {
-        return null;
+        return KryoSimple.asObject(EasyListNative.get(id, i));
     }
 
     @Override
@@ -120,7 +119,7 @@ public class EasyList<E> implements List<E> {
 
     @Override
     public void add(int i, E e) {
-
+        EasyListNative.add(id, i, KryoSimple.asByteArray(e));
     }
 
     @Override

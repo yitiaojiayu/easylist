@@ -2,28 +2,45 @@
 #include "com_yitiaojiayu_easylist_EasyListNative.h"
 
 #include <stdlib.h>
+#include <string.h>
 
+static jclass ArrayIndexOutOfBoundsException;
 typedef struct
 {
     int capacity;
     int count;
+    int begin;
+    int end;
     char **data;
 } clazz_data;
 
 static int clazz_max = 16;
 static int clazz_id = 0;
-static char **data;
+static clazz_data **data;
 
-JNIEXPORT void JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_init(JNIEnv *env, jclass clazz)
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved)
 {
+    JNIEnv *env;
+    (*vm)->GetEnv(vm, (void **)&env, JNI_VERSION_1_8);
+    jclass tempException = (*env)->FindClass(env, "java/lang/ArrayIndexOutOfBoundsException");
+    ArrayIndexOutOfBoundsException = (*env)->NewGlobalRef(env, tempException);
     data = malloc(clazz_max * sizeof(clazz_data *));
+    return JNI_VERSION_1_8;
 }
 
 JNIEXPORT jint JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_new_1object(JNIEnv *env, jclass clazz)
 {
+    if (clazz_id >= clazz_max)
+    {
+        clazz_max *= 2;
+        clazz_data **temp = realloc(data, clazz_max * sizeof(clazz_data *));
+        data = temp;
+    }
     clazz_data *new_obj = malloc(sizeof(clazz_data));
     new_obj->capacity = 16;
     new_obj->count = 0;
+    new_obj->begin = 4;
+    new_obj->end = 4;
     new_obj->data = malloc(16 * sizeof(char *));
     data[clazz_id] = new_obj;
     return clazz_id++;
@@ -31,10 +48,73 @@ JNIEXPORT jint JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_new_1object(
 
 JNIEXPORT jint JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_size(JNIEnv *env, jclass clazz, jint id)
 {
-    return ((clazz_data *)data[id])->count;
+    return data[id]->count;
 }
 
 JNIEXPORT jboolean JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_is_1empty(JNIEnv *env, jclass clazz, jint id)
 {
-    return ((clazz_data *)data[id])->count == 0;
+    return data[id]->count == 0;
+}
+
+JNIEXPORT jboolean JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_add(JNIEnv *env, jclass clazz, jint id, jint index, jbyteArray obj)
+{
+    if (index < 0 || index > data[id]->count)
+    {
+        char msg[64];
+        snprintf(msg, sizeof(msg), "EasyList -> add -> index: %d, range: 0 ~ %d", index, data[id]->count);
+        (*env)->ThrowNew(env, ArrayIndexOutOfBoundsException, msg);
+    }
+    jbyte *bytes = (*env)->GetByteArrayElements(env, obj, NULL);
+    int len = (*env)->GetArrayLength(env, obj);
+    if (index > data[id]->count - index - 1)
+    {
+        if (data[id]->end >= data[id]->capacity)
+        {
+            data[id]->capacity *= 2;
+            char **temp = realloc(data[id]->data, data[id]->capacity * sizeof(char *));
+            data[id]->data = temp;
+        }
+        if (index != data[id]->count)
+        {
+            index += data[id]->begin;
+            memmove(&(data[id]->data[index + 1]), &(data[id]->data[index]), (data[id]->end - index) * sizeof(char *));
+        }
+        else
+        {
+            index += data[id]->begin;
+        }
+        data[id]->end++;
+        data[id]->data[index] = malloc(len);
+    }
+    else
+    {
+        if (data[id]->begin <= 0)
+        {
+            data[id]->capacity *= 2;
+            char **temp = realloc(data[id]->data, data[id]->capacity * sizeof(char *));
+            memcpy(&(temp[data[id]->capacity / 2]), &(temp[0]), data[id]->end * sizeof(char *));
+            data[id]->data = temp;
+            data[id]->begin += data[id]->capacity / 2;
+            data[id]->end += data[id]->capacity / 2;
+        }
+        if (index != 0)
+        {
+            index += data[id]->begin;
+            memmove(&(data[id]->data[data[id]->begin - 1]), &(data[id]->data[data[id]->begin]), (index - data[id]->begin) * sizeof(char *));
+        }
+        else
+        {
+            index += data[id]->begin;
+        }
+        data[id]->begin--;
+        data[id]->data[--index] = malloc(len);
+    }
+    memcpy(data[id]->data[index], bytes, len);
+    (*env)->ReleaseByteArrayElements(env, obj, bytes, JNI_ABORT);
+    data[id]->count++;
+    return JNI_TRUE;
+}
+
+JNIEXPORT jbyteArray JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_get(JNIEnv *env, jclass clazz, jint id, jint index)
+{
 }

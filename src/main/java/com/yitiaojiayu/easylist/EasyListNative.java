@@ -30,7 +30,6 @@ final class EasyListNative {
     static {
         try {
             loadNativeLibrary();
-            init();
         } catch (Exception e) {
             System.err.println("Load libraries failed: easylist.\n" + e);
             throw new UnsatisfiedLinkError("Failed to load native library: " + e.getMessage());
@@ -104,8 +103,11 @@ final class EasyListNative {
         }
     }
 
-    static native void init();
     static native int new_object();
+
     static native int size(int id);
     static native boolean is_empty(int id);
+
+    static native boolean add(int id, int index, byte[] data);
+    static native byte[] get(int id, int index);
 }
