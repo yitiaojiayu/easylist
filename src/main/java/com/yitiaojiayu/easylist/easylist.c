@@ -92,7 +92,6 @@ JNIEXPORT jboolean JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_add(JNIE
         data[id]->end++;
         data[id]->data[index] = malloc(sizeof(element_data));
         data[id]->data[index]->data = malloc(len);
-
     }
     else
     {
@@ -134,6 +133,7 @@ JNIEXPORT jbyteArray JNICALL Java_com_yitiaojiayu_easylist_EasyListNative_get(JN
         (*env)->ThrowNew(env, ArrayIndexOutOfBoundsException, msg);
         return NULL;
     }
+    index += data[id]->begin;
     jbyteArray javaByteArray = (*env)->NewByteArray(env, data[id]->data[index]->size);
     (*env)->SetByteArrayRegion(env, javaByteArray, 0, data[id]->data[index]->size, data[id]->data[index]->data);
     return javaByteArray;
