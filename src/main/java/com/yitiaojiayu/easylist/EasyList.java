@@ -12,7 +12,7 @@ import java.util.*;
  */
 public class EasyList<E> implements List<E> {
 
-    private int id;
+    private final int id;
 
     public EasyList() {
         this.id = EasyListNative.new_object();
@@ -30,32 +30,37 @@ public class EasyList<E> implements List<E> {
 
     @Override
     public boolean contains(Object o) {
+        for (E element : this) {
+            if (Objects.equals(element, o)) {
+                return true;
+            }
+        }
         return false;
     }
 
     @Override
     public Iterator<E> iterator() {
-        return null;
+        return new EasyIterator();
     }
 
-    // private class EasyIterator implements Iterator<E> {
-    //     int cursor = 0;
-    //
-    //     @Override
-    //     public boolean hasNext() {
-    //         return cursor < count;
-    //     }
-    //
-    //     @Override
-    //     public E next() {
-    //         if (!hasNext()) {
-    //             throw new NoSuchElementException("EasyList: iterator(): No more elements");
-    //         }
-    //         E nextElement = EasyList.this.get(cursor);
-    //         cursor++;
-    //         return nextElement;
-    //     }
-    // }
+    private class EasyIterator implements Iterator<E> {
+        int cursor = 0;
+
+        @Override
+        public boolean hasNext() {
+            return cursor < size();
+        }
+
+        @Override
+        public E next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException("EasyList: iterator(): No more elements");
+            }
+            E nextElement = EasyList.this.get(cursor);
+            cursor++;
+            return nextElement;
+        }
+    }
 
     @Override
     public Object[] toArray() {
