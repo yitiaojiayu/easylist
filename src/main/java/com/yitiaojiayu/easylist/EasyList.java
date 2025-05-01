@@ -296,12 +296,18 @@ public class EasyList<E> implements List<E> {
     private class EasyListIterator implements ListIterator<E> {
         int cursor;
         int lastRet = -1;
+        int modCount;
+
+        public EasyListIterator() {
+            this.modCount = EasyListNative.mod_count(id);
+        }
 
         public EasyListIterator(int index) {
             if (index < 0 || index > size()) {
                 throw new IndexOutOfBoundsException("EasyList: listIterator: Index Error");
             }
             this.cursor = index;
+            this.modCount = EasyListNative.mod_count(id);
         }
 
         @Override
@@ -311,6 +317,9 @@ public class EasyList<E> implements List<E> {
 
         @Override
         public E next() {
+            if (modCount != EasyListNative.mod_count(id)) {
+                throw new ConcurrentModificationException("EasyList: iterator: next: The list was also modified");
+            }
             if (!hasNext()) {
                 throw new NoSuchElementException("EasyList: listIterator: next: No next");
             }
@@ -325,6 +334,9 @@ public class EasyList<E> implements List<E> {
 
         @Override
         public E previous() {
+            if (modCount != EasyListNative.mod_count(id)) {
+                throw new ConcurrentModificationException("EasyList: iterator: next: The list was also modified");
+            }
             if (!hasPrevious()) {
                 throw new NoSuchElementException("EasyList: listIterator: previous: no previous");
             }
@@ -344,6 +356,9 @@ public class EasyList<E> implements List<E> {
 
         @Override
         public void remove() {
+            if (modCount != EasyListNative.mod_count(id)) {
+                throw new ConcurrentModificationException("EasyList: iterator: next: The list was also modified");
+            }
             if (lastRet == -1) {
                 throw new IllegalStateException("EasyList: listIterator: remove: can only be called once after next()");
             }
@@ -352,10 +367,14 @@ public class EasyList<E> implements List<E> {
                 cursor--;
             }
             lastRet = -1;
+            modCount = EasyListNative.mod_count(id);
         }
 
         @Override
         public void set(E e) {
+            if (modCount != EasyListNative.mod_count(id)) {
+                throw new ConcurrentModificationException("EasyList: iterator: next: The list was also modified");
+            }
             if (lastRet == -1) {
                 throw new IllegalStateException("EasyList: listIterator: remove: can only be called once after next()");
             }
@@ -364,9 +383,13 @@ public class EasyList<E> implements List<E> {
 
         @Override
         public void add(E e) {
+            if (modCount != EasyListNative.mod_count(id)) {
+                throw new ConcurrentModificationException("EasyList: iterator: next: The list was also modified");
+            }
             EasyList.this.add(cursor, e);
             cursor++;
             lastRet = -1;
+            modCount = EasyListNative.mod_count(id);
         }
     }
 
