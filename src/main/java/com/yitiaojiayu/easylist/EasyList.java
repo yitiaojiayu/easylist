@@ -135,7 +135,7 @@ public class EasyList<E> implements List<E> {
     @Override
     public boolean remove(Object o) {
         for (int i = 0; i < size(); i++) {
-            if (get(i).equals(o)) {
+            if (Objects.equals(get(i), o)) {
                 remove(i);
                 return true;
             }
@@ -155,7 +155,10 @@ public class EasyList<E> implements List<E> {
 
     @Override
     public boolean addAll(Collection<? extends E> c) {
-        if (c == null || c.isEmpty()) {
+        if (c == null) {
+            throw new NullPointerException("EasyList: addAll(Collection<? extends E> c): list is null");
+        }
+        if (c.isEmpty()) {
             return false;
         }
         for (E e : c) {
@@ -166,7 +169,10 @@ public class EasyList<E> implements List<E> {
 
     @Override
     public boolean addAll(int index, Collection<? extends E> c) {
-        if (c == null || c.isEmpty()) {
+        if (c == null) {
+            throw new NullPointerException("EasyList: addAll(Collection<? extends E> c): list is null");
+        }
+        if (c.isEmpty()) {
             return false;
         }
         for (E e : c) {
