@@ -3,13 +3,13 @@ package com.yitiaojiayu.easylist;
 import com.yitiaojiayu.kryo.KryoSimple;
 
 import java.lang.reflect.Array;
-import java.nio.ByteBuffer;
 import java.util.*;
 
 /**
  * @author yitiaojiayu
  * @date 2025/3/27
  */
+@SuppressWarnings({"unused", "unchecked", "PatternVariableCanBeUsed", "java:S127", "java:S2160"})
 public class EasyList<E> implements List<E> {
 
     private final int id;
@@ -274,7 +274,7 @@ public class EasyList<E> implements List<E> {
 
         public EasyListIterator(int index) {
             if (index < 0 || index > size()) {
-                throw new IndexOutOfBoundsException("EasyList: ListIterator: Index Error");
+                throw new IndexOutOfBoundsException("EasyList: listIterator: Index Error");
             }
             this.cursor = index;
         }
@@ -287,7 +287,7 @@ public class EasyList<E> implements List<E> {
         @Override
         public E next() {
             if (!hasNext()) {
-                throw new NoSuchElementException("EasyList: ListIterator: next: No next");
+                throw new NoSuchElementException("EasyList: listIterator: next: No next");
             }
             lastRet = cursor;
             return get(cursor++);
@@ -301,7 +301,7 @@ public class EasyList<E> implements List<E> {
         @Override
         public E previous() {
             if (!hasPrevious()) {
-                throw new NoSuchElementException("EasyList: ListIterator: previous: no previous");
+                throw new NoSuchElementException("EasyList: listIterator: previous: no previous");
             }
             lastRet = --cursor;
             return get(cursor);
@@ -319,8 +319,8 @@ public class EasyList<E> implements List<E> {
 
         @Override
         public void remove() {
-            if (lastRet == -1){
-                throw new IllegalStateException("EasyList: ListIterator: remove: can only be called once after next()");
+            if (lastRet == -1) {
+                throw new IllegalStateException("EasyList: listIterator: remove: can only be called once after next()");
             }
             EasyList.this.remove(lastRet);
             if (lastRet < cursor) {
@@ -331,8 +331,8 @@ public class EasyList<E> implements List<E> {
 
         @Override
         public void set(E e) {
-            if (lastRet == -1){
-                throw new IllegalStateException("EasyList: ListIterator: remove: can only be called once after next()");
+            if (lastRet == -1) {
+                throw new IllegalStateException("EasyList: listIterator: remove: can only be called once after next()");
             }
             EasyList.this.set(lastRet, e);
         }
@@ -345,10 +345,62 @@ public class EasyList<E> implements List<E> {
         }
     }
 
-
     @Override
     public List<E> subList(int fromIndex, int toIndex) {
-        return List.of();
+        return new EasySubList(fromIndex, toIndex);
+    }
+
+    private class EasySubList extends AbstractList<E> {
+        private final int offset;
+        private int size;
+
+        EasySubList(int fromIndex, int toIndex) {
+            if (fromIndex < 0 || toIndex > size() || fromIndex > toIndex) {
+                throw new IndexOutOfBoundsException("EasyList: subList: Index Error");
+            }
+            this.offset = fromIndex;
+            this.size = toIndex - fromIndex;
+        }
+
+        @Override
+        public int size() {
+            return size;
+        }
+
+        @Override
+        public E get(int index) {
+            if (index < 0 || index >= size) {
+                throw new IndexOutOfBoundsException("EasyList: subList: get: Index Error");
+            }
+            return EasyList.this.get(offset + index);
+        }
+
+        @Override
+        public E set(int index, E element) {
+            if (index < 0 || index >= size) {
+                throw new IndexOutOfBoundsException("EasyList: subList: set: Index Error");
+            }
+            return EasyList.this.set(offset + index, element);
+        }
+
+        @Override
+        public void add(int index, E element) {
+            if (index < 0 || index > size) {
+                throw new IndexOutOfBoundsException("EasyList: subList: add: Index Error");
+            }
+            EasyList.this.add(offset + index, element);
+            size++;
+        }
+
+        @Override
+        public E remove(int index) {
+            if (index < 0 || index >= size) {
+                throw new IndexOutOfBoundsException("EasyList: subList: remove: Index Error");
+            }
+            E removed = EasyList.this.remove(offset + index);
+            size--;
+            return removed;
+        }
     }
 
     @Override
